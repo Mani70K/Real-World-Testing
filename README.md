@@ -1,10 +1,10 @@
-# Regulatory Compliance Reporting System
+# Real World Testing Reporting System
 
-This project is a **Regulatory Compliance Reporting System** built using **.NET 8** for the backend, with **Jenkins** for frontend automation and **AWS RDS** as the primary database. The system is designed to generate detailed reports on total API call counts and total application counts over specific time periods. The workflow involves inputting the reporting date range (start and end dates) via Jenkins, processing the report generation logic with AWS ECS services, and storing the final reports in an S3 bucket.
+This project is a **Real World Testing Reporting System** built using **.NET 8** for the backend, with **Jenkins** for frontend automation and **AWS RDS** as the primary database. The system is designed to generate detailed reports on total API call counts and total application counts over specific time periods. The workflow involves inputting the reporting date range (start and end dates) via Jenkins, processing the report generation logic with AWS ECS services, and storing the final reports in an S3 bucket.
 
 ## Key Features
 
-- **API and Application Count Reporting**: The system allows users to generate reports that summarize the total API call counts and total application usage during a user-defined time frame.
+- **API and Application Count Reporting**: The system allows users to generate reports that summarize the total API call counts and total application usage during a specified time frame.
 - **Jenkins Integration**: Users can provide the report parameters (start and end dates) through Jenkins, which automates the workflow.
 - **AWS ECS for Processing**: The report generation logic is processed asynchronously using AWS ECS services to ensure scalability and efficient resource usage.
 - **S3 Storage for Reports**: Once the reports are generated, they are stored in an AWS S3 bucket for easy access and retrieval.
@@ -41,15 +41,23 @@ This project is a **Regulatory Compliance Reporting System** built using **.NET 
 
 2. **Task Execution Using ECS**: 
    - The ECS service kicks off the process by calling a series of backend services that handle data collection and computation.
-   
+
+   - **Job Status Service**: Read the start date and end date from JSON file from S3 Bucket open folder and after completion of all the service, this service will move JSON file to S3 Bucket closed folder.
+     
+   - **Tenant Service**: Retrieve the Active Tenants for Intergy and PrimeSuite and passed to the **Metrics Service**.
+     
    - **Metrics Service**: Fetches total API call counts from the RDS database based on the given dates.
    
-   - **Application Count Service**: Gathers application usage data over the specified period.
+   - **Application Service**: Fetch application counts for specified period from AWS RDS.
+  
+   - **CSV Builder Service**: Gather API Call counts from **Metrics Service** and Application Counts from **Application Service** and generate a CSV Report.
+  
+   - **S3Writer Service**: Write the generated CSV Report to the S3 Bucket Output folder.
 
 3. **Data Storage**:
    - The processed data is written into a CSV file.
    
-   - The generated report is saved in an AWS S3 bucket, categorized by date or other naming conventions for easy retrieval.
+   - The generated report is saved in an AWS S3 bucket, categorized by processed date and time for easy retrieval.
 
 4. **Report Retrieval**: 
    - The final CSV report can be accessed from the AWS S3 bucket. It contains the total API call count and application count for the specified reporting period.
@@ -58,15 +66,18 @@ This project is a **Regulatory Compliance Reporting System** built using **.NET 
 
 ```bash
 ├── Backend (.NET 8)
-│   ├── Metrics Service (API Call Count)
-│   ├── Application Count Service
-│   └── Report Generation
+|   ├── Job Status Service
+|   ├── Tenant Service
+│   ├── Metrics Service
+│   ├── Application Service
+|   ├── CSV Builder Service
+│   └── S3 Writer Service
 ├── Frontend Automation (Jenkins)
 │   └── Input Start/End Dates -> Trigger ECS Services
 ├── AWS ECS (Processing)
 │   ├── Orchestrates Tasks
 │   └── Ensures Scalability and Efficiency
 ├── AWS RDS (Database)
-│   └── Stores Historical API and Application Usage Data
+│   └── Retrieve Application Datas
 └── AWS S3 (Storage)
     └── Stores Generated Reports (CSV Format)
